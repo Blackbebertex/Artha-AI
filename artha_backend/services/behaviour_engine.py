@@ -49,7 +49,7 @@ def compute_signals(transactions):
                 dining_by_month[month_key] = dining_by_month.get(month_key, 0.0) + abs_amount
                 
     # Savings Rate calculation: (Income - Expenses) / Income
-    savings_rate = 0.22  # Fallback to demo baseline
+    savings_rate = 0.0
     if income > 0:
         savings_rate = round((income - expenses) / income, 4)
         
@@ -61,7 +61,7 @@ def compute_signals(transactions):
     current_day = datetime.now().day
     
     delta_months = sorted_months
-    if active_month in sorted_months and current_day < 10 and len(sorted_months) >= 3:
+    if active_month in sorted_months and current_day < 10 and len(sorted_months) >= 2:
         delta_months = [m for m in sorted_months if m != active_month]
         
     dining_current = 0.0

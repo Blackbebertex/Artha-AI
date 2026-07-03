@@ -30,20 +30,24 @@ def get_snapshot(user_id):
         except Exception as e:
             print(f"Error loading snapshot for {target_id}: {e}")
             
-    # Fallback default snapshot
-    return {
-        "customerId": "cust_001",
-        "name": "Riya Kapoor",
-        "riskProfile": "Moderate",
-        "language": "en",
-        "savings": 188200,
-        "debts": 0,
-        "accounts": [
-            {"accountId": "acc_savings_001", "type": "SAVINGS", "balance": 38200},
-            {"accountId": "acc_fd_882", "type": "FD", "balance": 150000, "interestRate": 6.1, "lastTouchedAt": "2025-05-12"}
-        ],
-        "goals": [
-            {"goalId": "goal_car_2027", "name": "First Car", "targetAmount": 500000, "currentAmount": 240000, "targetDate": "2027-06-01"},
-            {"goalId": "goal_vacation_2027", "name": "Europe Vacation", "targetAmount": 200000, "currentAmount": 58000, "targetDate": "2027-03-01"}
-        ]
-    }
+    # If the user is specifically cust_001, return the fallback demo data.
+    # Otherwise, raise a ValueError to prevent data leakage of cust_001 to other user IDs.
+    if target_id == "cust_001":
+        return {
+            "customerId": "cust_001",
+            "name": "Riya Kapoor",
+            "riskProfile": "Moderate",
+            "language": "en",
+            "savings": 188200,
+            "debts": 0,
+            "accounts": [
+                {"accountId": "acc_savings_001", "type": "SAVINGS", "balance": 38200},
+                {"accountId": "acc_fd_882", "type": "FD", "balance": 150000, "interestRate": 6.1, "lastTouchedAt": "2025-05-12"}
+            ],
+            "goals": [
+                {"goalId": "goal_car_2027", "name": "First Car", "targetAmount": 500000, "currentAmount": 240000, "targetDate": "2027-06-01"},
+                {"goalId": "goal_vacation_2027", "name": "Europe Vacation", "targetAmount": 200000, "currentAmount": 58000, "targetDate": "2027-03-01"}
+            ]
+        }
+        
+    raise ValueError(f"Customer snapshot for '{target_id}' not found.")

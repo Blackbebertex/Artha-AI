@@ -1,7 +1,8 @@
-version: '3.8'
 services:
   artha_gateway:
-    build: .
+    build:
+      context: ..
+      dockerfile: phase_4_5_ops/Dockerfile
     ports:
       - "8000:8000"
     environment:

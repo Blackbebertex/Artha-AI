@@ -4,6 +4,15 @@ import re
 from agents.rag_knowledge_base import retrieve_facts
 from agents.compliance_guardrails import check_safety
 
+_CLIENT = None
+
+def _get_anthropic_client(api_key):
+    global _CLIENT
+    if _CLIENT is None:
+        from anthropic import AsyncAnthropic
+        _CLIENT = AsyncAnthropic(api_key=api_key)
+    return _CLIENT
+
 async def generate_response_async(user_text, customer_context, signals, recommendation, history, language="en"):
     # Retrieve grounded facts via RAG
     rag_facts = retrieve_facts(user_text)
@@ -47,9 +56,7 @@ CONVERSATION_HISTORY:
     
     if api_key:
         try:
-            # Async client initialization
-            from anthropic import AsyncAnthropic
-            client = AsyncAnthropic(api_key=api_key)
+            client = _get_anthropic_client(api_key)
             
             # Request response from Claude
             message = await client.messages.create(
@@ -86,7 +93,7 @@ CONVERSATION_HISTORY:
     if is_hindi:
         reply = "Bilkul! Main aapko Hindi mein bata sakti hoon. Aapki savings rate is mahine 22% hai — yeh aapke average se behtar hai. Aapka SIP bhi First Car goal ke liye sahi track pe hai. 🎯"
     elif re.search(r"\b(doing|summary|overview|status)\b", lower_text):
-        reply = f"You saved **{signals.get('savings_rate', 0.22)*100}%** of your income this month, Riya! 🎉 This is above your usual 18%. Your SIPs are on track, and you have ₹38,200 in your savings account."
+        reply = f"You saved **{round(signals.get('savings_rate', 0.22)*100, 1)}%** of your income this month, Riya! 🎉 This is above your usual 18%. Your SIPs are on track, and you have ₹38,200 in your savings account."
     elif re.search(r"\b(sip|mutual fund|investment)\b", lower_text):
         reply = "Your SIP of **₹5,000/month** into the Hybrid Equity Fund is active. You've accumulated **₹74,200** so far, which is tracking well for your First Car goal."
     elif re.search(r"\b(recommend|suggest|advice)", lower_text):

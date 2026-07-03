@@ -120,32 +120,32 @@
       <div class="portfolio-grid">
         <div class="port-card">
           <div class="port-card-label">Total Net Worth</div>
-          <div class="port-card-value">₹3,24,000</div>
+          <div class="port-card-value" id="portfolio-net-worth">₹3,24,000</div>
           <div class="port-card-trend up">+12.4% this year</div>
         </div>
         <div class="port-card">
           <div class="port-card-label">Mutual Funds (SIP)</div>
-          <div class="port-card-value">₹74,200</div>
+          <div class="port-card-value" id="portfolio-mf">₹74,200</div>
           <div class="port-card-trend up">+8.1%</div>
         </div>
         <div class="port-card">
           <div class="port-card-label">Fixed Deposits</div>
-          <div class="port-card-value">₹1,50,000</div>
+          <div class="port-card-value" id="portfolio-fd">₹1,50,000</div>
           <div class="port-card-trend neutral">6.1% p.a.</div>
         </div>
         <div class="port-card">
           <div class="port-card-label">Savings Account</div>
-          <div class="port-card-value">₹38,200</div>
+          <div class="port-card-value" id="portfolio-savings">₹38,200</div>
           <div class="port-card-trend neutral">Emergency fund</div>
         </div>
       </div>
       <div class="allocation-section">
         <h3>Asset Allocation</h3>
         <div class="allocation-bar">
-          <div class="alloc-segment fd" style="width:46%" title="FD – 46%">FD 46%</div>
-          <div class="alloc-segment mf" style="width:23%" title="MF – 23%">MF 23%</div>
-          <div class="alloc-segment savings" style="width:12%" title="Savings – 12%">SAV 12%</div>
-          <div class="alloc-segment other" style="width:19%" title="Other – 19%">OTHER 19%</div>
+          <div class="alloc-segment fd" id="alloc-fd" style="width:46%" title="FD – 46%">FD 46%</div>
+          <div class="alloc-segment mf" id="alloc-mf" style="width:23%" title="MF – 23%">MF 23%</div>
+          <div class="alloc-segment savings" id="alloc-savings" style="width:12%" title="Savings – 12%">SAV 12%</div>
+          <div class="alloc-segment other" id="alloc-other" style="width:19%" title="Other – 19%">OTHER 19%</div>
         </div>
       </div>
     </section>
@@ -153,75 +153,23 @@
     <!-- Goals Tab -->
     <section class="tab-panel" id="tab-goals">
       <div class="panel-header"><h2>🎯 Financial Goals</h2></div>
-      <div class="goals-list">
-        <div class="goal-card">
-          <div class="goal-icon">🚗</div>
-          <div class="goal-info">
-            <div class="goal-name">First Car</div>
-            <div class="goal-meta">Target: ₹5,00,000 · Due: Jun 2027</div>
-            <div class="goal-progress-bar"><div class="goal-progress-fill" style="width:48%"></div></div>
-            <div class="goal-pct">48% funded</div>
-          </div>
-          <div class="goal-status on-track">On Track</div>
-        </div>
-        <div class="goal-card">
-          <div class="goal-icon">🛡️</div>
-          <div class="goal-info">
-            <div class="goal-name">Emergency Fund</div>
-            <div class="goal-meta">Target: ₹75,000 · Due: Dec 2026</div>
-            <div class="goal-progress-bar"><div class="goal-progress-fill" style="width:51%"></div></div>
-            <div class="goal-pct">51% funded</div>
-          </div>
-          <div class="goal-status on-track">On Track</div>
-        </div>
-        <div class="goal-card">
-          <div class="goal-icon">✈️</div>
-          <div class="goal-info">
-            <div class="goal-name">Europe Vacation</div>
-            <div class="goal-meta">Target: ₹1,50,000 · Due: Mar 2026</div>
-            <div class="goal-progress-bar"><div class="goal-progress-fill warning" style="width:29%"></div></div>
-            <div class="goal-pct">29% funded</div>
-          </div>
-          <div class="goal-status at-risk">At Risk</div>
-        </div>
+      <div class="goals-list" id="goals-list">
+        <!-- Dynamically rendered goal cards -->
       </div>
     </section>
 
     <!-- Spending Insights Tab -->
     <section class="tab-panel" id="tab-insights">
       <div class="panel-header"><h2>💡 Spending Insights – June 2026</h2></div>
-      <div class="insights-grid">
-        <div class="insight-card">
-          <div class="insight-cat">🍽️ Dining Out</div>
-          <div class="insight-amount">₹8,400</div>
-          <div class="insight-change up">+₹3,200 vs avg</div>
-          <div class="insight-note">Mostly weekday lunches near office. 3rd week in a row.</div>
-        </div>
-        <div class="insight-card">
-          <div class="insight-cat">🛒 Groceries</div>
-          <div class="insight-amount">₹5,200</div>
-          <div class="insight-change neutral">On par with avg</div>
-          <div class="insight-note">Consistent spending pattern. No action needed.</div>
-        </div>
-        <div class="insight-card">
-          <div class="insight-cat">🚕 Transport</div>
-          <div class="insight-amount">₹3,100</div>
-          <div class="insight-change down">-₹800 vs avg</div>
-          <div class="insight-note">Good – possible savings from WFH days.</div>
-        </div>
-        <div class="insight-card">
-          <div class="insight-cat">💊 Healthcare</div>
-          <div class="insight-amount">₹2,800</div>
-          <div class="insight-change up">+₹2,800 vs avg</div>
-          <div class="insight-note">One-time expense – dentist visit.</div>
-        </div>
+      <div class="insights-grid" id="insights-grid">
+        <!-- Dynamically rendered insight cards -->
       </div>
       <div class="savings-rate-section">
         <h3>Savings Rate</h3>
         <div class="savings-rate-bar">
-          <div class="savings-rate-fill" style="width:22%"></div>
+          <div class="savings-rate-fill" id="savings-rate-fill" style="width:22%"></div>
         </div>
-        <div class="savings-rate-label">22% this month &nbsp;·&nbsp; avg 18% &nbsp;·&nbsp; <span style="color:var(--green)">↑ Good job!</span></div>
+        <div class="savings-rate-label" id="savings-rate-label">22% this month &nbsp;·&nbsp; avg 18% &nbsp;·&nbsp; <span style="color:var(--green)">↑ Good job!</span></div>
       </div>
     </section>
 

@@ -8,6 +8,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 from typing import List, Optional
 import datetime
+from datetime import timezone
 import re
 import secrets
 
@@ -40,6 +41,7 @@ class MessageRequest(BaseModel):
 class MessageResponse(BaseModel):
     reply_text: str
     recommendation_ids: List[str] = []
+    recommendation: Optional[dict] = None
 
 class RecommendationFeedbackRequest(BaseModel):
     feedback: str
@@ -58,6 +60,15 @@ class VoiceSynthesisResponse(BaseModel):
 # ──────────────────────────────────────────────
 SESSION_HISTORIES = {}  # session_id -> list of {"user": str, "bot": str}
 SESSION_LANGUAGES = {}  # session_id -> language code
+
+def _add_session(session_id: str, language: str):
+    if len(SESSION_HISTORIES) >= 100:
+        # Evict oldest session
+        oldest_key = next(iter(SESSION_HISTORIES))
+        SESSION_HISTORIES.pop(oldest_key, None)
+        SESSION_LANGUAGES.pop(oldest_key, None)
+    SESSION_HISTORIES[session_id] = []
+    SESSION_LANGUAGES[session_id] = language
 
 VALID_TOKENS = {"demo-token": {"customer_id": "cust_001", "name": "Riya Kapoor"}}
 
@@ -106,7 +117,7 @@ async def handle_message(session_id: str, customer_id: str, user_text: str) -> M
     
     # Update local conversation memory
     if session_id not in SESSION_HISTORIES:
-        SESSION_HISTORIES[session_id] = []
+        _add_session(session_id, language)
     SESSION_HISTORIES[session_id].append({"user": user_text, "bot": reply})
     
     # Cap memory window at 8 turns to prevent token drift
@@ -123,7 +134,8 @@ async def handle_message(session_id: str, customer_id: str, user_text: str) -> M
         "active_recommendation": rec.get("recommendation_id")
     })
     
-    return MessageResponse(reply_text=reply, recommendation_ids=rec_ids)
+    rec_details = rec if rec.get("recommendation_id") in rec_ids else None
+    return MessageResponse(reply_text=reply, recommendation_ids=rec_ids, recommendation=rec_details)
 
 # ──────────────────────────────────────────────
 # App Setup
@@ -132,10 +144,11 @@ app = FastAPI(title="ARTHA API Gateway", version="1.0.0")
 
 ALLOWED_ORIGINS = [
     "http://localhost:8000",
+    "http://localhost:3000",
     "http://localhost:5500",
+    "http://127.0.0.1:3000",
     "http://127.0.0.1:5500",
-    "http://127.0.0.1:8000",
-    "null"  # For local file:/// origin during demo
+    "http://127.0.0.1:8000"
 ]
 
 app.add_middleware(
@@ -163,24 +176,40 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depen
 # ──────────────────────────────────────────────
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "ARTHA API Gateway", "time": datetime.datetime.utcnow().isoformat()}
+    return {"status": "ok", "service": "ARTHA API Gateway", "time": datetime.datetime.now(timezone.utc).isoformat()}
 
 @app.post("/v1/session/start", response_model=SessionStartResponse)
 def start_session(req: SessionStartRequest, user=Depends(get_current_user)):
     session_id = "sess_" + secrets.token_urlsafe(16)
-    SESSION_HISTORIES[session_id] = []
-    SESSION_LANGUAGES[session_id] = req.language
+    _add_session(session_id, req.language)
     return SessionStartResponse(
         session_id=session_id,
         customer_id=user["customer_id"],
         language=req.language
     )
 
+@app.get("/v1/customer/snapshot")
+def get_customer_snapshot(user=Depends(get_current_user)):
+    try:
+        snapshot = get_snapshot(user["customer_id"])
+        return snapshot
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
 @app.post("/v1/conversation/message", response_model=MessageResponse)
 async def conversation_message(req: MessageRequest, user=Depends(get_current_user)):
     # Retrieve customer ID from token details
     customer_id = user["customer_id"]
-    return await handle_message(req.session_id, customer_id, req.message_text)
+    try:
+        return await handle_message(req.session_id, customer_id, req.message_text)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
 
 @app.post("/v1/recommendations/{rec_id}/feedback")
 def recommendation_feedback(rec_id: str, req: RecommendationFeedbackRequest, user=Depends(get_current_user)):

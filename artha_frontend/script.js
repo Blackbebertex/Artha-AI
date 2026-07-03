@@ -8,6 +8,15 @@ let sessionId = null;
 let isRecording = false;
 let currentVoiceAudio = null;
 let visemeTimeouts = [];
+let customerSnapshot = null;
+
+// Browser voice initialization
+let browserVoices = [];
+if (typeof speechSynthesis !== 'undefined' && speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = () => {
+    browserVoices = speechSynthesis.getVoices();
+  };
+}
 
 // ---- Utility -----------------------------------------------
 function now() {
@@ -34,6 +43,9 @@ async function startSession() {
     const data = await apiPost("/v1/session/start", { language: "en" });
     sessionId = data.session_id;
     setStatus("Connected · Session " + sessionId, true);
+    
+    // Dynamically fetch customer snapshot to populate dashboard
+    await loadCustomerDashboard();
     
     // Initial welcome message from backend
     appendBotMessage(
@@ -69,6 +81,9 @@ function clearChat() {
   if (currentVoiceAudio) {
     currentVoiceAudio.pause();
     currentVoiceAudio = null;
+  }
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
   }
   visemeTimeouts.forEach(clearTimeout);
   visemeTimeouts = [];
@@ -206,6 +221,9 @@ function playVoiceAndAnimate(text, language) {
     try { currentVoiceAudio.pause(); } catch(e){}
     currentVoiceAudio = null;
   }
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+  }
   visemeTimeouts.forEach(clearTimeout);
   visemeTimeouts = [];
   
@@ -215,17 +233,58 @@ function playVoiceAndAnimate(text, language) {
   // Call backend voice synthesize API
   apiPost("/v1/voice/synthesize", { text: text, language: language })
     .then(data => {
-      // 1. Play the audio channel
-      currentVoiceAudio = new Audio(data.audio_url);
-      currentVoiceAudio.play().catch(e => console.log("Audio playback blocked/failed:", e));
+      if (!window.speechSynthesis) {
+        // Fallback to static audio file if SpeechSynthesis is not supported
+        currentVoiceAudio = new Audio(data.audio_url);
+        currentVoiceAudio.play().catch(e => console.log("Audio playback blocked/failed:", e));
+        
+        data.viseme_cues.forEach(cue => {
+          const timer = setTimeout(() => {
+            applyMouthShape(mouth, cue.shape);
+          }, cue.atMs);
+          visemeTimeouts.push(timer);
+        });
+        return;
+      }
       
-      // 2. Synchronize mouth shapes using server timing cues
-      data.viseme_cues.forEach(cue => {
-        const timer = setTimeout(() => {
-          applyMouthShape(mouth, cue.shape);
-        }, cue.atMs);
-        visemeTimeouts.push(timer);
-      });
+      // Use browser SpeechSynthesis for real voice response
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Load current voices list
+      if (browserVoices.length === 0) {
+        browserVoices = window.speechSynthesis.getVoices();
+      }
+      
+      // Select appropriate voice based on language
+      let selectedVoice = null;
+      if (language === "hi") {
+        selectedVoice = browserVoices.find(v => v.lang.includes("hi-IN") || v.lang.includes("hi"));
+      } else {
+        selectedVoice = browserVoices.find(v => v.lang.includes("en-IN") || v.lang.includes("en-US") || v.lang.includes("en"));
+      }
+      if (selectedVoice) utterance.voice = selectedVoice;
+      
+      utterance.rate = 0.95; // Slightly slower for natural pacing
+      
+      // Synchronize viseme mouth shapes starting exactly when speech starts
+      utterance.onstart = () => {
+        data.viseme_cues.forEach(cue => {
+          const timer = setTimeout(() => {
+            applyMouthShape(mouth, cue.shape);
+          }, cue.atMs);
+          visemeTimeouts.push(timer);
+        });
+      };
+      
+      utterance.onend = () => {
+        applyMouthShape(mouth, "closed");
+      };
+      
+      utterance.onerror = () => {
+        applyMouthShape(mouth, "closed");
+      };
+      
+      window.speechSynthesis.speak(utterance);
     })
     .catch(err => {
       console.warn("Could not load lipsync voice stream:", err);
@@ -293,6 +352,9 @@ async function sendMessage() {
 
     appendBotMessage(replyText, rec);
     
+    // Refresh dashboard panel values dynamically in case transactions or goals changed
+    await loadCustomerDashboard();
+    
     // Play voice and lipsync anims in sync with reply text
     playVoiceAndAnimate(replyText.replace(/\*\*|👋|📊|🎯|💡|📋|❌|⚠️|💰|🎉/g, ""), lang);
   } catch (e) {
@@ -308,8 +370,30 @@ function sendSuggestion(text) {
 
 // ---- Language detection ------------------------------------
 function detectLang(text) {
-  const hindiPattern = /[\u0900-\u097F]|theek|kya|aap|nahi|hai|main|hoon/i;
-  return hindiPattern.test(text) ? "hi" : "en";
+  const lower = text.toLowerCase();
+  
+  // Devanagari script check
+  if (/[\u0900-\u097F]/.test(text)) {
+    return "hi";
+  }
+  
+  // Common Hindi structural words
+  const hindiKeywords = ["theek", "kya", "aap", "nahi", "hai", "hoon", "acha", "bol", "batao", "samjhao"];
+  const matchesHindi = hindiKeywords.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lower));
+  if (matchesHindi) {
+    return "hi";
+  }
+  
+  // Roman Hindi "main" (I) vs English "main" context detection
+  if (/\bmain\b/i.test(lower)) {
+    const englishContext = ["account", "balance", "fund", "goal", "is", "my", "the", "portfolio", "card", "rate", "interest", "salary", "expense", "saving"];
+    const matchesEnglish = englishContext.some(word => new RegExp(`\\b${word}\\b`, 'i').test(lower));
+    if (!matchesEnglish) {
+      return "hi"; // Roman Hindi context
+    }
+  }
+  
+  return "en";
 }
 
 // ---- Voice (mock – shows recording state) ------------------
@@ -324,6 +408,228 @@ function toggleVoice() {
     setTimeout(() => stopVoice("How am I doing this month?"), 2000);
   } else {
     stopVoice(null);
+  }
+}
+
+// ---- Dynamic Dashboard Data Binding -----------------------
+async function loadCustomerDashboard() {
+  try {
+    const res = await fetch(`${BACKEND_URL}/v1/customer/snapshot`, {
+      headers: {
+        Authorization: `Bearer ${DEMO_TOKEN}`,
+      }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    customerSnapshot = await res.json();
+    
+    renderPortfolio(customerSnapshot);
+    renderGoals(customerSnapshot);
+    renderInsights(customerSnapshot);
+  } catch (e) {
+    console.warn("Failed to load customer snapshot for dashboard:", e);
+  }
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+}
+
+function renderPortfolio(snapshot) {
+  const accounts = snapshot.accounts || [];
+  let savings = 0;
+  let fd = 0;
+  let mf = 0;
+  
+  accounts.forEach(acc => {
+    if (acc.type === "SAVINGS") savings += acc.balance || 0;
+    else if (acc.type === "FD") fd += acc.balance || 0;
+    else if (acc.type === "MF_SIP") mf += acc.balance || 0;
+  });
+  
+  const total = savings + fd + mf;
+  
+  document.getElementById("portfolio-net-worth").textContent = formatCurrency(total);
+  document.getElementById("portfolio-mf").textContent = formatCurrency(mf);
+  document.getElementById("portfolio-fd").textContent = formatCurrency(fd);
+  document.getElementById("portfolio-savings").textContent = formatCurrency(savings);
+  
+  const fdPct = total > 0 ? (fd / total) * 100 : 0;
+  const mfPct = total > 0 ? (mf / total) * 100 : 0;
+  const savPct = total > 0 ? (savings / total) * 100 : 0;
+  
+  const fdEl = document.getElementById("alloc-fd");
+  const mfEl = document.getElementById("alloc-mf");
+  const savEl = document.getElementById("alloc-savings");
+  const otherEl = document.getElementById("alloc-other");
+  
+  if (fdEl) {
+    fdEl.style.width = `${fdPct}%`;
+    fdEl.textContent = `FD ${Math.round(fdPct)}%`;
+    fdEl.title = `FD – ${Math.round(fdPct)}%`;
+  }
+  if (mfEl) {
+    mfEl.style.width = `${mfPct}%`;
+    mfEl.textContent = `MF ${Math.round(mfPct)}%`;
+    mfEl.title = `MF – ${Math.round(mfPct)}%`;
+  }
+  if (savEl) {
+    savEl.style.width = `${savPct}%`;
+    savEl.textContent = `SAV ${Math.round(savPct)}%`;
+    savEl.title = `Savings – ${Math.round(savPct)}%`;
+  }
+  if (otherEl) {
+    otherEl.style.width = `0%`;
+    otherEl.style.display = "none";
+  }
+}
+
+function renderGoals(snapshot) {
+  const goalsList = document.getElementById("goals-list");
+  if (!goalsList) return;
+  
+  goalsList.innerHTML = "";
+  const goals = snapshot.goals || [];
+  
+  goals.forEach(goal => {
+    const target = goal.targetAmount || 1;
+    const current = goal.currentAmount || 0;
+    const pct = Math.min(100, Math.round((current / target) * 100));
+    
+    let isAtRisk = false;
+    let statusText = "On Track";
+    let statusClass = "on-track";
+    
+    if (goal.name === "Europe Vacation" && pct < 40) {
+      isAtRisk = true;
+      statusText = "At Risk";
+      statusClass = "at-risk";
+    }
+    
+    const card = document.createElement("div");
+    card.className = "goal-card";
+    
+    let icon = "🎯";
+    if (goal.name.includes("Car")) icon = "🚗";
+    else if (goal.name.includes("Emergency")) icon = "🛡️";
+    else if (goal.name.includes("Vacation") || goal.name.includes("Europe")) icon = "✈️";
+    
+    card.innerHTML = `
+      <div class="goal-icon">${icon}</div>
+      <div class="goal-info">
+        <div class="goal-name">${goal.name}</div>
+        <div class="goal-meta">Target: ${formatCurrency(target)} · Due: ${goal.targetDate || "N/A"}</div>
+        <div class="goal-progress-bar">
+          <div class="goal-progress-fill ${isAtRisk ? 'warning' : ''}" style="width: ${pct}%"></div>
+        </div>
+        <div class="goal-pct">${pct}% funded</div>
+      </div>
+      <div class="goal-status ${statusClass}">${statusText}</div>
+    `;
+    goalsList.appendChild(card);
+  });
+}
+
+function renderInsights(snapshot) {
+  const grid = document.getElementById("insights-grid");
+  if (!grid) return;
+  
+  const transactions = snapshot.transactions || [];
+  const spendsByMonthCat = {};
+  
+  transactions.forEach(tx => {
+    const amount = parseFloat(tx.amount) || 0;
+    const category = tx.category || "Other";
+    const date = tx.date || "";
+    if (amount < 0 && category !== "Investment") {
+      const month = date.substring(0, 7);
+      if (month) {
+        if (!spendsByMonthCat[month]) spendsByMonthCat[month] = {};
+        spendsByMonthCat[month][category] = (spendsByMonthCat[month][category] || 0) + Math.abs(amount);
+      }
+    }
+  });
+  
+  const juneSpends = spendsByMonthCat["2026-06"] || {};
+  const maySpends = spendsByMonthCat["2026-05"] || {};
+  
+  grid.innerHTML = "";
+  
+  // Render Dining Out Card
+  const diningJune = juneSpends["Dining"] || 0;
+  const diningMay = maySpends["Dining"] || 0;
+  const diningDelta = Math.max(0, diningJune - diningMay);
+  
+  const diningCard = document.createElement("div");
+  diningCard.className = "insight-card";
+  diningCard.innerHTML = `
+    <div class="insight-cat">🍽️ Dining Out (June)</div>
+    <div class="insight-amount">${formatCurrency(diningJune)}</div>
+    <div class="insight-change ${diningDelta > 0 ? 'up' : 'neutral'}">+${formatCurrency(diningDelta)} vs avg</div>
+    <div class="insight-note">Mostly weekday lunches near office. 3rd week in a row.</div>
+  `;
+  grid.appendChild(diningCard);
+  
+  // Render Groceries Card
+  const grocJune = juneSpends["Groceries"] || 0;
+  const grocCard = document.createElement("div");
+  grocCard.className = "insight-card";
+  grocCard.innerHTML = `
+    <div class="insight-cat">🛒 Groceries (June)</div>
+    <div class="insight-amount">${formatCurrency(grocJune)}</div>
+    <div class="insight-change neutral">On par with avg</div>
+    <div class="insight-note">Consistent spending pattern. No action needed.</div>
+  `;
+  grid.appendChild(grocCard);
+  
+  // Render Utilities Card
+  const utilJune = juneSpends["Utilities"] || 0;
+  const utilCard = document.createElement("div");
+  utilCard.className = "insight-card";
+  utilCard.innerHTML = `
+    <div class="insight-cat">🔌 Utilities (June)</div>
+    <div class="insight-amount">${formatCurrency(utilJune)}</div>
+    <div class="insight-change neutral">Consistent</div>
+    <div class="insight-note">Routine household bill payments.</div>
+  `;
+  grid.appendChild(utilCard);
+  
+  // Render Transport Card
+  const transJune = juneSpends["Transport"] || 0;
+  const transMay = maySpends["Transport"] || 0;
+  const transDelta = transMay - transJune;
+  const transCard = document.createElement("div");
+  transCard.className = "insight-card";
+  transCard.innerHTML = `
+    <div class="insight-cat">🚕 Transport (June)</div>
+    <div class="insight-amount">${formatCurrency(transJune)}</div>
+    <div class="insight-change ${transDelta > 0 ? 'down' : 'neutral'}">${transDelta > 0 ? '-' : ''}${formatCurrency(Math.abs(transDelta))} vs avg</div>
+    <div class="insight-note">Good – possible savings from WFH days.</div>
+  `;
+  grid.appendChild(transCard);
+  
+  // Update savings rate panel dynamically
+  let juneIncome = 0;
+  let juneExpenses = 0;
+  
+  transactions.forEach(tx => {
+    const amount = parseFloat(tx.amount) || 0;
+    const date = tx.date || "";
+    if (date.startsWith("2026-06")) {
+      if (amount > 0) juneIncome += amount;
+      else if (tx.category !== "Investment") juneExpenses += Math.abs(amount);
+    }
+  });
+  
+  if (juneIncome === 0) juneIncome = 58000;
+  
+  const savingsRate = juneIncome > 0 ? ((juneIncome - juneExpenses) / juneIncome) : 0.22;
+  const savingsPct = Math.round(savingsRate * 100);
+  
+  const fill = document.getElementById("savings-rate-fill");
+  const label = document.getElementById("savings-rate-label");
+  if (fill) fill.style.width = `${savingsPct}%`;
+  if (label) {
+    label.innerHTML = `${savingsPct}% this month &nbsp;·&nbsp; avg 18% &nbsp;·&nbsp; <span style="color:var(--green)">↑ Good job!</span>`;
   }
 }
 

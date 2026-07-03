@@ -1,6 +1,7 @@
 from services.customer_snapshot import get_snapshot
 from services.behaviour_engine import compute_signals
 import datetime
+from datetime import timezone
 
 def trigger_handoff(user_id, reason):
     """
@@ -12,7 +13,7 @@ def trigger_handoff(user_id, reason):
     signals = compute_signals(transactions)
     
     handoff_payload = {
-        "event_time": datetime.datetime.utcnow().isoformat(),
+        "event_time": datetime.datetime.now(timezone.utc).isoformat(),
         "customerId": user_id,
         "customerName": snapshot.get("name", "Riya Kapoor"),
         "riskProfile": snapshot.get("riskProfile", "Moderate"),
