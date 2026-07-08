@@ -1,0 +1,193 @@
+{
+  "customerId": "cust_profile_030",
+  "name": "Test Customer 30",
+  "riskProfile": "Conservative",
+  "language": "hi",
+  "consent": {
+    "consentId": "consent_030",
+    "scope": [
+      "BALANCE",
+      "TRANSACTIONS",
+      "SUMMARY"
+    ],
+    "expiresAt": "2027-12-31"
+  },
+  "accounts": [
+    {
+      "accountId": "acc_sav_30",
+      "fipId": "AXIS-FIP",
+      "type": "SAVINGS",
+      "balance": 27000
+    },
+    {
+      "accountId": "acc_fd_30",
+      "fipId": "HDFC-FIP",
+      "type": "FD",
+      "balance": 150000,
+      "interestRate": 6.1,
+      "openedAt": "2024-01-01",
+      "lastTouchedAt": "2024-06-01"
+    },
+    {
+      "accountId": "acc_mf_30",
+      "fipId": "ZERODHA-FIP",
+      "type": "MF_SIP",
+      "fundName": "Hybrid Equity Fund",
+      "sipAmount": 3000,
+      "balance": 188837
+    }
+  ],
+  "goals": [
+    {
+      "goalId": "goal_30_0",
+      "name": "Europe Vacation",
+      "targetAmount": 1500000,
+      "currentAmount": 587080,
+      "targetDate": "2027-07-10"
+    },
+    {
+      "goalId": "goal_30_1",
+      "name": "Emergency Fund",
+      "targetAmount": 1500000,
+      "currentAmount": 381827,
+      "targetDate": "2028-12-04"
+    }
+  ],
+  "transactions": [
+    {
+      "txnId": "t_001",
+      "accountId": "acc_savings_001",
+      "amount": 45000.0,
+      "type": "CREDIT",
+      "category": "Salary",
+      "narration": "Salary Credit",
+      "date": "2026-01-28"
+    },
+    {
+      "txnId": "t_002",
+      "accountId": "acc_savings_001",
+      "amount": -22627.007582041777,
+      "type": "DEBIT",
+      "category": "Rent",
+      "narration": "Rent",
+      "date": "2026-01-01"
+    },
+    {
+      "txnId": "t_003",
+      "accountId": "acc_savings_001",
+      "amount": -754.2335860680593,
+      "type": "DEBIT",
+      "category": "Dining",
+      "narration": "Dining",
+      "date": "2026-01-10"
+    },
+    {
+      "txnId": "t_004",
+      "accountId": "acc_savings_001",
+      "amount": -1500,
+      "type": "DEBIT",
+      "category": "Groceries",
+      "narration": "Groceries",
+      "date": "2026-01-10"
+    },
+    {
+      "txnId": "t_005",
+      "accountId": "acc_savings_001",
+      "amount": -2200,
+      "type": "DEBIT",
+      "category": "Utilities",
+      "narration": "Utilities",
+      "date": "2026-01-10"
+    },
+    {
+      "txnId": "t_006",
+      "accountId": "acc_savings_001",
+      "amount": 45000.0,
+      "type": "CREDIT",
+      "category": "Salary",
+      "narration": "Salary Credit",
+      "date": "2026-01-28"
+    },
+    {
+      "txnId": "t_007",
+      "accountId": "acc_savings_001",
+      "amount": -22627.007582041777,
+      "type": "DEBIT",
+      "category": "Rent",
+      "narration": "Rent",
+      "date": "2026-01-01"
+    },
+    {
+      "txnId": "t_008",
+      "accountId": "acc_savings_001",
+      "amount": -754.2335860680593,
+      "type": "DEBIT",
+      "category": "Dining",
+      "narration": "Dining",
+      "date": "2026-01-10"
+    },
+    {
+      "txnId": "t_009",
+      "accountId": "acc_savings_001",
+      "amount": -1500,
+      "type": "DEBIT",
+      "category": "Groceries",
+      "narration": "Groceries",
+      "date": "2026-01-10"
+    },
+    {
+      "txnId": "t_010",
+      "accountId": "acc_savings_001",
+      "amount": -2200,
+      "type": "DEBIT",
+      "category": "Utilities",
+      "narration": "Utilities",
+      "date": "2026-01-10"
+    },
+    {
+      "txnId": "t_011",
+      "accountId": "acc_savings_001",
+      "amount": 45000.0,
+      "type": "CREDIT",
+      "category": "Salary",
+      "narration": "Salary Credit",
+      "date": "2026-03-28"
+    },
+    {
+      "txnId": "t_012",
+      "accountId": "acc_savings_001",
+      "amount": -22627.007582041777,
+      "type": "DEBIT",
+      "category": "Rent",
+      "narration": "Rent",
+      "date": "2026-03-01"
+    },
+    {
+      "txnId": "t_013",
+      "accountId": "acc_savings_001",
+      "amount": -754.2335860680593,
+      "type": "DEBIT",
+      "category": "Dining",
+      "narration": "Dining",
+      "date": "2026-03-10"
+    },
+    {
+      "txnId": "t_014",
+      "accountId": "acc_savings_001",
+      "amount": -1500,
+      "type": "DEBIT",
+      "category": "Groceries",
+      "narration": "Groceries",
+      "date": "2026-03-10"
+    },
+    {
+      "txnId": "t_015",
+      "accountId": "acc_savings_001",
+      "amount": -2200,
+      "type": "DEBIT",
+      "category": "Utilities",
+      "narration": "Utilities",
+      "date": "2026-03-10"
+    }
+  ]
+}

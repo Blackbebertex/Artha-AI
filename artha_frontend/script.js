@@ -9,6 +9,8 @@ let isRecording = false;
 let currentVoiceAudio = null;
 let visemeTimeouts = [];
 let customerSnapshot = null;
+let lastPlanData = null;
+let messageMode = "auto";
 
 // Browser voice initialization
 let browserVoices = [];
@@ -323,7 +325,75 @@ function applyMouthShape(mouth, shape) {
   }
 }
 
-// ---- Send message ------------------------------------------
+// ---- Chain progress UI -------------------------------------
+function showChainProgress(activeStep) {
+  const el = document.getElementById("chain-progress");
+  if (!el) return;
+  el.classList.remove("hidden");
+  document.querySelectorAll(".chain-step").forEach(step => {
+    const n = parseInt(step.dataset.step, 10);
+    step.classList.toggle("done", n < activeStep);
+    step.classList.toggle("active", n === activeStep);
+  });
+}
+
+function hideChainProgress() {
+  const el = document.getElementById("chain-progress");
+  if (el) el.classList.add("hidden");
+}
+
+function showAuditBadge(meta) {
+  const badge = document.getElementById("audit-badge");
+  if (!badge || !meta) return;
+  if (meta.path !== "deep") {
+    badge.classList.add("hidden");
+    return;
+  }
+  const approved = meta.decision === "approve";
+  badge.classList.remove("hidden");
+  badge.innerHTML = approved
+    ? `✓ Audited · ${Math.round(meta.confidence)}% confidence · Chief Wealth Officer`
+  : `⚠ ${meta.decision} · ${Math.round(meta.confidence)}% confidence`;
+  badge.className = "audit-badge " + (approved ? "approved" : "warning");
+}
+
+async function animateChainProgress() {
+  for (let i = 1; i <= 7; i++) {
+    showChainProgress(i);
+    await new Promise(r => setTimeout(r, 400));
+  }
+}
+
+function renderWealthPlan(plan) {
+  const container = document.getElementById("wealth-plan-content");
+  if (!container || !plan) return;
+  const s2 = plan.step2 || {};
+  const s3 = plan.step3 || {};
+  const s4 = plan.step4 || {};
+  const s5 = plan.step5 || {};
+  const goals = (s2.goals || []).map(g =>
+    `<div class="plan-goal"><strong>${g.name}</strong> — ${g.feasibility_score}% feasible · SIP ₹${Math.round(g.monthly_sip_required || 0)}/mo</div>`
+  ).join("");
+  const allocs = (s3.allocations || []).map(a =>
+    `<div class="plan-alloc"><span>${a.product_name}</span><span>${a.allocation_pct}%</span></div>`
+  ).join("");
+  const risks = (s4.risks || []).map(r => `<li>${r}</li>`).join("");
+  const nudges = (s5.nudges || []).map(n => `<li>${n.message}</li>`).join("");
+  container.innerHTML = `
+    <div class="plan-section"><h3>Goals</h3>${goals || "<p>No goals</p>"}</div>
+    <div class="plan-section"><h3>Allocation</h3>${allocs || "<p>No allocations</p>"}</div>
+    <div class="plan-section"><h3>Red Team Risks</h3><ul>${risks}</ul></div>
+    <div class="plan-section"><h3>Blue Team Nudges</h3><ul>${nudges}</ul></div>
+  `;
+}
+
+async function requestFullPlan() {
+  messageMode = "deep";
+  document.getElementById("user_input").value = "Generate my full wealth plan";
+  await sendMessage();
+  messageMode = "auto";
+}
+
 async function sendMessage() {
   const input = document.getElementById("user_input");
   const text = input.value.trim();
@@ -333,7 +403,11 @@ async function sendMessage() {
   appendUserMessage(text);
   showTyping();
 
-  // Detect language switch for Hindi keywords
+  const isDeep = messageMode === "deep" || /\b(full wealth plan|wealth plan|portfolio strategy)\b/i.test(text);
+  if (isDeep) {
+    animateChainProgress();
+  }
+
   const lang = detectLang(text);
   document.getElementById("lang-chip").textContent = lang === "hi" ? "HI" : "EN";
 
@@ -343,22 +417,38 @@ async function sendMessage() {
     const data = await apiPost("/v1/conversation/message", {
       session_id: sessionId,
       message_text: text,
+      mode: messageMode,
     });
 
     hideTyping();
+    hideChainProgress();
 
     const replyText = data.reply_text;
-    const rec = data.recommendation; // Dynamically parsed from backend recommendation object
+    const rec = data.recommendation;
+    const meta = data.chain_metadata;
+    const voiceText = (data.avatar_script || replyText).replace(/\*\*|👋|📊|🎯|💡|📋|❌|⚠️|💰|🎉/g, "");
 
     appendBotMessage(replyText, rec);
-    
-    // Refresh dashboard panel values dynamically in case transactions or goals changed
+    showAuditBadge(meta);
+
+    if (meta && meta.plan_id && meta.path === "deep") {
+      try {
+        const planRes = await fetch(`${BACKEND_URL}/v1/wealth/plan/${meta.plan_id}`, {
+          headers: { Authorization: `Bearer ${DEMO_TOKEN}` },
+        });
+        if (planRes.ok) {
+          const planPayload = await planRes.json();
+          lastPlanData = planPayload.steps;
+          renderWealthPlan(lastPlanData);
+        }
+      } catch (_) {}
+    }
+
     await loadCustomerDashboard();
-    
-    // Play voice and lipsync anims in sync with reply text
-    playVoiceAndAnimate(replyText.replace(/\*\*|👋|📊|🎯|💡|📋|❌|⚠️|💰|🎉/g, ""), lang);
+    playVoiceAndAnimate(voiceText, lang);
   } catch (e) {
     hideTyping();
+    hideChainProgress();
     appendBotMessage("❌ Couldn't reach the backend. Is the FastAPI server running? (`uvicorn main:app --port 8000`)", null);
   }
 }

@@ -1,0 +1,20 @@
+{
+  "dashboard": "artha_pilot",
+  "metrics": [
+    {"name": "chain_latency_p95_ms", "threshold": 20000, "action": "alert_engineering"},
+    {"name": "chain_rejection_rate_pct", "threshold": 10, "action": "alert_compliance"},
+    {"name": "chain_confidence_avg", "threshold": 85, "action": "review_prompts"},
+    {"name": "llm_fallback_rate_pct", "threshold": 5, "action": "alert_ai_team"},
+    {"name": "deep_chains_per_day", "threshold": 3000, "action": "scale_review"}
+  ],
+  "cohorts": {
+    "pilot_1k": {
+      "size": 1000,
+      "feature_flag": "WEALTH_CHAIN_ENABLED",
+      "ab_test": {
+        "control": "quick_path",
+        "treatment": "deep_path_auto"
+      }
+    }
+  }
+}

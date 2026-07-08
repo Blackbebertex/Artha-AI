@@ -41,6 +41,9 @@
       <button class="nav-item" id="nav-insights" onclick="switchTab('insights')">
         <span class="nav-icon">💡</span> Spending Insights
       </button>
+      <button class="nav-item" id="nav-plan" onclick="switchTab('plan')">
+        <span class="nav-icon">📋</span> Wealth Plan
+      </button>
     </nav>
 
     <div class="sidebar-footer">
@@ -90,8 +93,24 @@
         <button class="suggestion-chip" onclick="sendSuggestion('How am I doing this month?')">How am I doing this month?</button>
         <button class="suggestion-chip" onclick="sendSuggestion('Show my SIP status')">Show my SIP status</button>
         <button class="suggestion-chip" onclick="sendSuggestion('Any recommendations for me?')">Any recommendations?</button>
+        <button class="suggestion-chip" onclick="requestFullPlan()">Full wealth plan</button>
         <button class="suggestion-chip" onclick="sendSuggestion('What is my risk profile?')">My risk profile</button>
       </div>
+
+      <div class="chain-progress hidden" id="chain-progress">
+        <div class="chain-progress-label">Running 7-step wealth audit…</div>
+        <div class="chain-steps" id="chain-steps">
+          <span class="chain-step" data-step="1">Analyst</span>
+          <span class="chain-step" data-step="2">Goals</span>
+          <span class="chain-step" data-step="3">Portfolio</span>
+          <span class="chain-step" data-step="4">Red Team</span>
+          <span class="chain-step" data-step="5">Blue Team</span>
+          <span class="chain-step" data-step="6">Avatar</span>
+          <span class="chain-step" data-step="7">Auditor</span>
+        </div>
+      </div>
+
+      <div class="audit-badge hidden" id="audit-badge"></div>
 
       <div class="chat-input-area">
         <div class="input-row">
@@ -170,6 +189,17 @@
           <div class="savings-rate-fill" id="savings-rate-fill" style="width:22%"></div>
         </div>
         <div class="savings-rate-label" id="savings-rate-label">22% this month &nbsp;·&nbsp; avg 18% &nbsp;·&nbsp; <span style="color:var(--green)">↑ Good job!</span></div>
+      </div>
+    </section>
+
+    <!-- Wealth Plan Tab -->
+    <section class="tab-panel" id="tab-plan">
+      <div class="panel-header">
+        <h2>📋 Audited Wealth Plan</h2>
+        <p class="panel-subtitle">7-step prompt chain · Chief Wealth Officer audit gate</p>
+      </div>
+      <div id="wealth-plan-content" class="wealth-plan-content">
+        <p class="plan-empty">Request a <strong>Full wealth plan</strong> from the chat to generate your audited plan.</p>
       </div>
     </section>
 

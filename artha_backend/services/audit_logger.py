@@ -53,3 +53,15 @@ def log_event(event_data):
         print(f"Failed to queue audit log: {e}")
         
     return log_record
+
+
+def log_chain_event(plan_id: str, customer_id: str, chain_state: dict, confidence: float, decision: str):
+    """Persist full wealth chain artifacts for compliance audit."""
+    return log_event({
+        "event_type": "wealth_chain_audit",
+        "plan_id": plan_id,
+        "customer_id": customer_id,
+        "confidence": confidence,
+        "decision": decision,
+        "chain_artifacts": chain_state,
+    })

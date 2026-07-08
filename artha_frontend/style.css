@@ -502,6 +502,56 @@ body {
 .savings-rate-fill { height: 100%; background: linear-gradient(90deg, var(--teal), var(--green)); border-radius: 4px; }
 .savings-rate-label { font-size: 13px; color: var(--text-secondary); }
 
+/* Wealth chain UI */
+.hidden { display: none !important; }
+.chain-progress {
+  padding: 8px 24px 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.chain-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+.chain-step {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--bg-card2);
+  border: 1px solid var(--border);
+  font-size: 11px;
+}
+.chain-step.active { border-color: var(--accent); color: var(--accent-light); }
+.chain-step.done { background: rgba(46, 204, 113, 0.15); color: var(--green); }
+.audit-badge {
+  margin: 0 24px 8px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+}
+.audit-badge.approved { background: rgba(46, 204, 113, 0.12); color: var(--green); }
+.audit-badge.warning { background: rgba(241, 196, 15, 0.12); color: #f1c40f; }
+.wealth-plan-content { padding: 0 32px 32px; }
+.plan-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.plan-section h3 { font-size: 14px; margin-bottom: 10px; color: var(--accent-light); }
+.plan-goal, .plan-alloc {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.plan-empty { color: var(--text-secondary); padding: 16px 32px; }
+.panel-subtitle { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
 /* ============================================================
    STATUS BAR
    ============================================================ */
