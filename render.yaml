@@ -1,26 +1,9 @@
 services:
   - type: web
-    name: artha-api
-    runtime: python
-    rootDir: artha_backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /health
-    envVars:
-      - key: GEMINI_API_KEY
-        sync: false
-      - key: GEMINI_MODEL
-        value: gemini-2.0-flash
-      - key: NODE_ENV
-        value: production
-      - key: PYTHON_VERSION
-        value: "3.11.9"
-      - key: ALLOWED_ORIGINS
-        sync: false
-
-  - type: web
     name: artha-frontend
     runtime: static
+    plan: free
+    branch: main
     rootDir: artha_frontend
     buildCommand: npm run build
     staticPublishPath: .
@@ -32,5 +15,29 @@ services:
       - key: BACKEND_URL
         fromService:
           name: artha-api
+          type: web
+          property: host
+
+  - type: web
+    name: artha-api
+    runtime: python
+    plan: free
+    branch: main
+    rootDir: artha_backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: NODE_ENV
+        value: production
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+      - key: ALLOWED_ORIGINS
+        fromService:
+          name: artha-frontend
           type: web
           property: host

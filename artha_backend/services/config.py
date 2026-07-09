@@ -34,7 +34,15 @@ class Settings:
 
   @staticmethod
   def _parse_origins(raw: str) -> List[str]:
-    return [o.strip() for o in raw.split(",") if o.strip()]
+    origins: List[str] = []
+    for part in raw.split(","):
+      origin = part.strip()
+      if not origin:
+        continue
+      if not origin.startswith(("http://", "https://")):
+        origin = f"https://{origin}"
+      origins.append(origin.rstrip("/"))
+    return origins
 
   @property
   def gemini_configured(self) -> bool:
