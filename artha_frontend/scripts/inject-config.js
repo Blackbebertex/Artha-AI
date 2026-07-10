@@ -4,7 +4,7 @@
 const fs = require("fs");
 const path = require("path");
 
-const DEFAULT_PROD_API = "https://arthaai-two.vercel.app";
+const DEFAULT_PROD_API = "https://artha-api-lsli.onrender.com";
 
 const raw =
   process.env.BACKEND_URL ||

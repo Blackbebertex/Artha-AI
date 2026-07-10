@@ -6,7 +6,6 @@
   "installCommand": "cd artha_frontend && npm install || true",
   "rewrites": [
     { "source": "/health", "destination": "/api" },
-    { "source": "/skill.md", "destination": "/api" },
     { "source": "/health-score", "destination": "/api" },
     { "source": "/recommend", "destination": "/api" },
     { "source": "/goal-plan", "destination": "/api" },
