@@ -3,5 +3,16 @@
   "buildCommand": "cd artha_frontend && npm run build",
   "outputDirectory": "artha_frontend",
   "framework": null,
-  "installCommand": "cd artha_frontend && npm install || true"
+  "installCommand": "cd artha_frontend && npm install || true",
+  "rewrites": [
+    { "source": "/health", "destination": "/api" },
+    { "source": "/health-score", "destination": "/api" },
+    { "source": "/recommend", "destination": "/api" },
+    { "source": "/goal-plan", "destination": "/api" },
+    { "source": "/chat", "destination": "/api" },
+    { "source": "/docs", "destination": "/api" },
+    { "source": "/openapi.json", "destination": "/api" },
+    { "source": "/redoc", "destination": "/api" },
+    { "source": "/v1/(.*)", "destination": "/api" }
+  ]
 }

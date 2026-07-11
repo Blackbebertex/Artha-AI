@@ -13,7 +13,7 @@ load_dotenv(_backend_dir / ".env")
 
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
@@ -45,6 +45,7 @@ from agents.wealth_chain.schemas import AuditDecision, ChainMetadata
 from agents.llm_telemetry import get_recent_events
 from agents.registry import get_agent, list_agents
 from services.gemini_service import get_gemini_service
+from routers.agent_api import router as agent_router
 
 # ──────────────────────────────────────────────
 # Pydantic Schemas
@@ -262,6 +263,8 @@ async def handle_message(
 app = FastAPI(title="ARTHA API Gateway", version="3.0.0")
 settings = get_settings()
 
+app.include_router(agent_router)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
@@ -296,6 +299,14 @@ def get_admin_user(user=Depends(get_current_user)):
             detail="Admin access required.",
         )
     return user
+
+
+@app.get("/skill.md")
+def serve_skill():
+    skill_path = _backend_dir / "SKILL.md"
+    if not skill_path.exists():
+        raise HTTPException(status_code=404, detail="SKILL.md not found")
+    return FileResponse(skill_path, media_type="text/markdown; charset=utf-8")
 
 
 @app.get("/health")

@@ -21,7 +21,6 @@ function backendConnectionHelp() {
 function backendOfflineStatus() {
   return IS_LOCAL_BACKEND ? "Backend offline — start uvicorn on port 8000" : `API offline — ${BACKEND_URL}`;
 }
-
 function startRenderKeepAlive() {
   if (IS_LOCAL_BACKEND) return;
   const ping = async () => {
@@ -32,6 +31,7 @@ function startRenderKeepAlive() {
   ping();
   window.setInterval(ping, 50000);
 }
+
 let DEMO_TOKEN = "demo-token";
 let notifications = [];
 
